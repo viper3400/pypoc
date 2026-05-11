@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <h1>Analytics</h1>
+    <p>Sample dashboard app registered independently from the host.</p>
+  </section>
+
+  <section class="app-grid" aria-label="Analytics metrics">
+    {% for metric in metrics %}
+      <article class="app-card">
+        <h2>{{ metric.value }}</h2>
+        <p>{{ metric.label }}</p>
+      </article>
+    {% endfor %}
+  </section>
+{% endblock %}

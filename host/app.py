@@ -1,0 +1,39 @@
+from __future__ import annotations
+
+from flask import Flask, render_template
+
+from host.config import PlatformConfig
+from host.registry import PluginRegistry
+
+
+def create_app(config: PlatformConfig | None = None) -> Flask:
+    platform_config = config or PlatformConfig.from_env()
+
+    app = Flask(__name__)
+    app.config["SECRET_KEY"] = platform_config.secret_key
+
+    registry = PluginRegistry(platform_config)
+    plugins = registry.discover()
+
+    for plugin in plugins:
+        app.register_blueprint(plugin.blueprint)
+
+    app.extensions["platform_registry"] = registry
+
+    @app.context_processor
+    def inject_platform_navigation() -> dict[str, object]:
+        return {"platform_menu": registry.menu_entries}
+
+    @app.get("/")
+    def index() -> str:
+        return render_template("index.html", plugins=plugins)
+
+    return app
+
+
+def main() -> None:
+    create_app().run(debug=True)
+
+
+if __name__ == "__main__":
+    main()

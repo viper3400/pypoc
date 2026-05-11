@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Platform Apps{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <h1>Installed Apps</h1>
+    <p>{{ plugins|length }} app{{ "" if plugins|length == 1 else "s" }} enabled for this deployment.</p>
+  </section>
+
+  <section class="app-grid" aria-label="Installed apps">
+    {% for plugin in plugins %}
+      <article class="app-card">
+        <h2>{{ plugin.name }}</h2>
+        <p>{{ plugin.description }}</p>
+        <footer>
+          <span>v{{ plugin.version }}</span>
+          {% if plugin.menu_entry %}
+            <a href="{{ plugin.menu_entry.path }}">Open</a>
+          {% endif %}
+        </footer>
+      </article>
+    {% else %}
+      <p>No apps are enabled.</p>
+    {% endfor %}
+  </section>
+{% endblock %}

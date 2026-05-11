@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Plugin Platform{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='platform.css') }}">
+  </head>
+  <body>
+    <header class="shell-header">
+      <a class="brand" href="{{ url_for('index') }}">Platform</a>
+      <nav aria-label="Application navigation">
+        {% for item in platform_menu %}
+          <a href="{{ item.path }}" class="nav-link" data-icon="{{ item.icon }}">{{ item.label }}</a>
+        {% endfor %}
+      </nav>
+    </header>
+    <main class="shell-main">
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>

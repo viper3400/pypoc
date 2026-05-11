@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Notes{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <h1>Notes</h1>
+    <p>Sample first-party app registered through the plugin registry.</p>
+  </section>
+
+  <section class="app-grid" aria-label="Notes">
+    {% for note in notes %}
+      <article class="app-card">
+        <h2>{{ note.title }}</h2>
+        <p>{{ note.body }}</p>
+      </article>
+    {% endfor %}
+  </section>
+{% endblock %}
