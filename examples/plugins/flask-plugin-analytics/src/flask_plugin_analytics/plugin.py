@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from apps.analytics.routes import blueprint
+from flask_plugin_analytics.routes import blueprint
 
 PLUGIN = {
     "id": "analytics",

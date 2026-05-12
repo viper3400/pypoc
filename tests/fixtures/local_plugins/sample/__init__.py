@@ -1,0 +1,1 @@
+"""Sample local plugin fixture."""

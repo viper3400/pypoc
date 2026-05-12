@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from flask import Flask, render_template
 
-from host.config import PlatformConfig
-from host.registry import PluginRegistry
+from flask_plugin_platform.config import PlatformConfig
+from flask_plugin_platform.registry import PluginRegistry
 
 
 def create_app(config: PlatformConfig | None = None) -> Flask:

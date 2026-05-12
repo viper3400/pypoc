@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import importlib.metadata
 import pkgutil
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -9,7 +10,9 @@ from typing import Any
 
 from flask import Blueprint
 
-from host.config import PlatformConfig
+from flask_plugin_platform.config import PlatformConfig
+
+DEFAULT_ENTRY_POINT_GROUP = "flask_plugin_platform.plugins"
 
 
 class PluginError(RuntimeError):
@@ -47,7 +50,14 @@ class PluginRegistry:
         return tuple(plugin.menu_entry for plugin in self.plugins if plugin.menu_entry is not None)
 
     def discover(self) -> tuple[Plugin, ...]:
-        for module in discover_plugin_modules(self._config.plugin_package):
+        for plugin in discover_entry_point_plugins(self._config.entry_point_group):
+            if self._config.is_enabled(plugin.id):
+                self.register(plugin)
+
+        if not self._config.local_plugin_package:
+            return self.plugins
+
+        for module in discover_plugin_modules(self._config.local_plugin_package):
             plugin = load_plugin(module)
             if self._config.is_enabled(plugin.id):
                 self.register(plugin)
@@ -79,6 +89,15 @@ def discover_plugin_modules(package_name: str) -> Iterable[ModuleType]:
             if exc.name == module_name:
                 continue
             raise
+
+
+def discover_entry_point_plugins(
+    group: str = DEFAULT_ENTRY_POINT_GROUP,
+) -> Iterable[Plugin]:
+    entry_points = importlib.metadata.entry_points()
+    for entry_point in entry_points.select(group=group):
+        raw_plugin = entry_point.load()
+        yield parse_plugin(raw_plugin, f"entry point {entry_point.name!r}")
 
 
 def load_plugin(module: ModuleType) -> Plugin:

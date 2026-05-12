@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from apps.notes.routes import blueprint
+from flask_plugin_notes.routes import blueprint
 
 PLUGIN = {
     "id": "notes",

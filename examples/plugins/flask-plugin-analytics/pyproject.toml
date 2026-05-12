@@ -1,0 +1,19 @@
+[project]
+name = "flask-plugin-analytics"
+version = "0.1.0"
+description = "Example Analytics plugin for flask-plugin-platform."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "flask>=3.0.0",
+    "flask-plugin-platform",
+]
+
+[project.entry-points."flask_plugin_platform.plugins"]
+analytics = "flask_plugin_analytics.plugin:PLUGIN"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/flask_plugin_analytics"]
