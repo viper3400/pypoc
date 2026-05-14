@@ -269,6 +269,62 @@ uv run pytest
 uv build
 ```
 
+## Standalone Executable
+
+The platform can be bundled into a single executable with PyInstaller. This is
+useful for desktop-style or appliance-style deployments where Python should not
+be installed separately on the target machine.
+
+Builds are OS-specific:
+
+- Build on macOS to create a macOS executable.
+- Build on Windows to create a `.exe`.
+- Build on Linux to create a Linux executable.
+
+Install whichever plugin packages should be included, then build:
+
+```bash
+uv sync --python 3.12
+uv pip install -e examples/plugins/flask-plugin-notes
+uv pip install -e examples/plugins/flask-plugin-analytics
+    ./scripts/build_executable.sh
+```
+
+The output is written to:
+
+```text
+dist/platform-server
+```
+
+On Windows the output name will be `platform-server.exe`.
+
+Run it:
+
+```bash
+./dist/platform-server --host 127.0.0.1 --port 5000
+```
+
+The executable runs the Flask application through Waitress by default. Flask is
+still the web framework, but its built-in development server is only used when
+you explicitly pass `--debug`:
+
+```bash
+./dist/platform-server --debug
+```
+
+The executable includes the platform plus plugin packages installed in the build
+environment. To ship only selected apps, install only those plugin packages before
+running the build. Runtime enable/disable filtering still works:
+
+```bash
+PLATFORM_ENABLED_APPS=notes ./dist/platform-server --port 5000
+```
+
+For normal server deployments, Gunicorn or a container image is still the
+preferred Linux production model. The standalone executable uses Waitress so it
+can run as a self-contained binary, including on Windows where Gunicorn is not a
+good fit.
+
 Build the example plugin packages:
 
 ```bash

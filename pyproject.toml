@@ -7,16 +7,19 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "flask>=3.0.0",
     "gunicorn>=22.0.0",
+    "waitress>=3.0.0",
 ]
 
 [dependency-groups]
 dev = [
+    "pyinstaller>=6.0.0",
     "pytest>=8.2.0",
     "ruff>=0.5.0",
 ]
 
 [project.scripts]
 platform-dev = "flask_plugin_platform.app:main"
+platform-server = "flask_plugin_platform.cli:main"
 
 [build-system]
 requires = ["hatchling"]
