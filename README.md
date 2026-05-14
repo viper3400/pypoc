@@ -229,17 +229,66 @@ uv run gunicorn "wsgi:app" --bind 0.0.0.0:8000 --workers 2
 
 The example in `examples/deployment/` shows this minimal product-repo shape.
 
-## Private Package Index
+For a public GitHub release, the platform dependency can be pinned directly to
+the wheel asset:
 
-Publish the infrastructure package and plugin packages to your private package
-index. A consuming project can then configure `uv` for that index and install
-only the packages needed for that deployment.
+```toml
+[project]
+dependencies = [
+    "flask-plugin-platform @ https://github.com/<OWNER>/<REPO>/releases/download/v0.1.0/flask_plugin_platform-0.1.0-py3-none-any.whl",
+    "flask-plugin-notes",
+    "flask-plugin-analytics",
+]
+```
 
-Example package set:
+This repository publishes only the reusable `flask-plugin-platform` package.
+Plugin packages remain separate Python distributions discovered through entry
+points and can adopt the same release flow in their own repositories.
 
-- `flask-plugin-platform`
-- `flask-plugin-notes`
-- `flask-plugin-analytics`
+## GitHub Release Distribution
+
+As of May 14, 2026, GitHub Packages does not provide a Python package registry.
+This repository therefore ships Python distribution artifacts through GitHub
+Releases instead of a package index.
+
+Release assets published by this repository:
+
+- `flask_plugin_platform-<version>-py3-none-any.whl`
+- `flask_plugin_platform-<version>.tar.gz`
+
+Public install examples:
+
+```bash
+uv pip install "flask-plugin-platform @ https://github.com/<OWNER>/<REPO>/releases/download/v0.1.0/flask_plugin_platform-0.1.0-py3-none-any.whl"
+pip install "flask-plugin-platform @ https://github.com/<OWNER>/<REPO>/releases/download/v0.1.0/flask_plugin_platform-0.1.0-py3-none-any.whl"
+```
+
+Private repository install example:
+
+```bash
+gh release download v0.1.0 --repo <OWNER>/<REPO> --pattern "flask_plugin_platform-0.1.0-py3-none-any.whl"
+uv pip install ./flask_plugin_platform-0.1.0-py3-none-any.whl
+```
+
+The same downloaded wheel can be installed with `pip install ./flask_plugin_platform-0.1.0-py3-none-any.whl`.
+
+## Release Process
+
+`pyproject.toml` is the single source of truth for package metadata and version.
+
+To publish a release:
+
+1. Update `project.version` in `pyproject.toml`.
+2. Run `uv sync --python 3.12`.
+3. Run `uv run pytest`.
+4. Run `uv build`.
+5. Commit the version change.
+6. Create a matching Git tag such as `v0.1.0`.
+7. Push the commit and tag to GitHub.
+
+The `Release Python Package` workflow runs only on version tags. It verifies
+that the tag matches `pyproject.toml`, builds the wheel and sdist, validates the
+artifacts with `twine check`, and uploads them to a GitHub Release.
 
 ## Enable Or Disable Apps
 
@@ -267,6 +316,7 @@ uv sync --python 3.12
 uv run ruff check .
 uv run pytest
 uv build
+uvx twine check dist/*.whl dist/*.tar.gz
 ```
 
 ## Standalone Executable
