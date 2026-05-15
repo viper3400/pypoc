@@ -229,6 +229,70 @@ uv run gunicorn "wsgi:app" --bind 0.0.0.0:8000 --workers 2
 
 The example in `examples/deployment/` shows this minimal product-repo shape.
 
+## Runtime Configuration From Environment
+
+`create_app()` remains the central entry point for production and development
+deployments. Consumer repositories do not need project-specific bootstrap code
+just to copy plugin settings from environment variables into `app.config`.
+
+Use `PLATFORM_APP_CONFIG_PREFIXES` to declare which environment variable
+prefixes should be copied into Flask config unchanged:
+
+```bash
+PLATFORM_APP_CONFIG_PREFIXES=PYDO,PYTODO
+PYDO_DATA_DIR=/var/lib/pydo
+PYDO_TODO_FILE=/var/lib/pydo/todos.json
+PYTODO_PASSWORD_HASH=scrypt$...
+```
+
+With that configuration, `create_app()` will populate:
+
+- `app.config["PYDO_DATA_DIR"]`
+- `app.config["PYDO_TODO_FILE"]`
+- `app.config["PYTODO_PASSWORD_HASH"]`
+
+This is generic and not tied to a specific plugin. Any environment variable
+whose name exactly matches one of the configured prefixes or starts with
+`<PREFIX>_` is copied into `app.config` with the same key.
+
+`SECRET_KEY` remains a dedicated top-level platform setting and does not need to
+be listed in `PLATFORM_APP_CONFIG_PREFIXES`.
+
+If a deployment needs a custom Flask instance directory, set:
+
+```bash
+PLATFORM_INSTANCE_PATH=/var/lib/flask-plugin-platform
+```
+
+The value is passed to Flask as `instance_path` during app creation, so a
+consumer can still keep:
+
+```python
+from flask_plugin_platform import create_app
+
+app = create_app()
+```
+
+Example production bootstrap:
+
+```python
+from flask_plugin_platform import create_app
+
+app = create_app()
+```
+
+Example runtime environment:
+
+```bash
+SECRET_KEY=change-me
+PLATFORM_APP_CONFIG_PREFIXES=PYDO,PYTODO
+PLATFORM_INSTANCE_PATH=/var/lib/example-product
+PYDO_DATA_DIR=/var/lib/example-product/data
+PYDO_TODO_FILE=/var/lib/example-product/data/todos.json
+PYTODO_PASSWORD_HASH=scrypt$...
+gunicorn "wsgi:app" --bind 0.0.0.0:8000 --workers 2
+```
+
 For a public GitHub release, the platform dependency can be pinned directly to
 the wheel asset:
 
@@ -272,6 +336,36 @@ uv pip install ./flask_plugin_platform-0.1.0-py3-none-any.whl
 
 The same downloaded wheel can be installed with `pip install ./flask_plugin_platform-0.1.0-py3-none-any.whl`.
 
+## GHCR Container Image
+
+Tagged pushes also publish the production image from [Dockerfile](/Users/Jan/Documents/Development/pypoc/Dockerfile:1)
+to GitHub Container Registry via [.github/workflows/container.yml](/Users/Jan/Documents/Development/pypoc/.github/workflows/container.yml:1).
+
+Image name:
+
+```text
+ghcr.io/<OWNER>/<REPO>
+```
+
+For a tag like `v0.1.0`, the workflow publishes these tags:
+
+- `ghcr.io/<OWNER>/<REPO>:v0.1.0`
+- `ghcr.io/<OWNER>/<REPO>:0.1.0`
+- `ghcr.io/<OWNER>/<REPO>:0.1`
+
+Pull and run example:
+
+```bash
+docker pull ghcr.io/<OWNER>/<REPO>:0.1.0
+docker run --rm -p 8000:8000 \
+  -e SECRET_KEY=change-me \
+  -e PLATFORM_APP_CONFIG_PREFIXES=PYDO,PYTODO \
+  -e PYDO_DATA_DIR=/var/lib/example-product/data \
+  -e PYDO_TODO_FILE=/var/lib/example-product/data/todos.json \
+  -e PYTODO_PASSWORD_HASH=scrypt$... \
+  ghcr.io/<OWNER>/<REPO>:0.1.0
+```
+
 ## Release Process
 
 `pyproject.toml` is the single source of truth for package metadata and version.
@@ -289,6 +383,9 @@ To publish a release:
 The `Release Python Package` workflow runs only on version tags. It verifies
 that the tag matches `pyproject.toml`, builds the wheel and sdist, validates the
 artifacts with `twine check`, and uploads them to a GitHub Release.
+
+The `Publish Container Image` workflow runs on the same tags and pushes the
+container image to `ghcr.io` using the repository `GITHUB_TOKEN`.
 
 ## Enable Or Disable Apps
 
