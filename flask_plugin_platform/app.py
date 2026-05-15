@@ -9,7 +9,12 @@ from flask_plugin_platform.registry import PluginRegistry
 def create_app(config: PlatformConfig | None = None) -> Flask:
     platform_config = config or PlatformConfig.from_env()
 
-    app = Flask(__name__)
+    flask_kwargs: dict[str, str] = {}
+    if platform_config.instance_path:
+        flask_kwargs["instance_path"] = platform_config.instance_path
+
+    app = Flask(__name__, **flask_kwargs)
+    app.config.from_mapping(platform_config.app_config)
     app.config["SECRET_KEY"] = platform_config.secret_key
 
     registry = PluginRegistry(platform_config)

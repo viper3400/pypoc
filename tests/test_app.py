@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import replace
+from pathlib import Path
+
 from flask import Blueprint
 
 from flask_plugin_platform.app import create_app
@@ -107,3 +110,40 @@ def test_entry_point_plugin_blueprint_is_registered(monkeypatch) -> None:
     app = create_app(PlatformConfig(enabled_apps={"entry-sample"}, disabled_apps=set()))
 
     assert app.test_client().get("/entry-sample/").data == b"entry sample"
+
+
+def test_create_app_loads_prefixed_env_values_into_app_config(monkeypatch) -> None:
+    monkeypatch.setenv("PLATFORM_APP_CONFIG_PREFIXES", "PYDO, PYTODO_")
+    monkeypatch.setenv("PYDO_DATA_DIR", "/var/lib/pydo")
+    monkeypatch.setenv("PYDO_TODO_FILE", "/var/lib/pydo/todos.json")
+    monkeypatch.setenv("PYTODO_PASSWORD_HASH", "scrypt$example")
+    monkeypatch.setenv("UNRELATED_SETTING", "ignored")
+
+    app = create_app(replace(PlatformConfig.from_env(), entry_point_group="tests.none"))
+
+    assert app.config["PYDO_DATA_DIR"] == "/var/lib/pydo"
+    assert app.config["PYDO_TODO_FILE"] == "/var/lib/pydo/todos.json"
+    assert app.config["PYTODO_PASSWORD_HASH"] == "scrypt$example"
+    assert "UNRELATED_SETTING" not in app.config
+
+
+def test_platform_config_can_set_instance_path_from_env(monkeypatch, tmp_path: Path) -> None:
+    instance_dir = tmp_path / "instance"
+    instance_dir.mkdir()
+    monkeypatch.setenv("PLATFORM_INSTANCE_PATH", str(instance_dir))
+
+    app = create_app(replace(PlatformConfig.from_env(), entry_point_group="tests.none"))
+
+    assert app.instance_path == str(instance_dir)
+
+
+def test_explicit_platform_config_app_config_is_applied() -> None:
+    app = create_app(
+        PlatformConfig(
+            entry_point_group="tests.none",
+            app_config={"PYDO_DATA_DIR": "/srv/pydo", "PYTODO_PASSWORD_HASH": "hash"},
+        )
+    )
+
+    assert app.config["PYDO_DATA_DIR"] == "/srv/pydo"
+    assert app.config["PYTODO_PASSWORD_HASH"] == "hash"

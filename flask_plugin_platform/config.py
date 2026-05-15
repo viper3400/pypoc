@@ -4,9 +4,32 @@ import os
 from dataclasses import dataclass, field
 
 
+def _normalize_prefixes(prefixes: set[str]) -> set[str]:
+    return {prefix.strip().rstrip("_").upper() for prefix in prefixes if prefix.strip()}
+
+
 def _csv_env(name: str) -> set[str]:
     raw = os.getenv(name, "")
     return {item.strip() for item in raw.split(",") if item.strip()}
+
+
+def _env_app_config(prefixes: set[str]) -> dict[str, str]:
+    normalized_prefixes = _normalize_prefixes(prefixes)
+    config: dict[str, str] = {}
+
+    for key, value in os.environ.items():
+        upper_key = key.upper()
+        if any(upper_key == prefix or upper_key.startswith(f"{prefix}_") for prefix in normalized_prefixes):
+            config[key] = value
+
+    return config
+
+
+def _instance_path_env() -> str | None:
+    raw = os.getenv("PLATFORM_INSTANCE_PATH", "").strip()
+    if not raw:
+        return None
+    return os.path.abspath(raw)
 
 
 @dataclass(frozen=True)
@@ -25,10 +48,20 @@ class PlatformConfig:
     )
     enabled_apps: set[str] = field(default_factory=lambda: _csv_env("PLATFORM_ENABLED_APPS"))
     disabled_apps: set[str] = field(default_factory=lambda: _csv_env("PLATFORM_DISABLED_APPS"))
+    app_config_prefixes: set[str] = field(
+        default_factory=lambda: _normalize_prefixes(_csv_env("PLATFORM_APP_CONFIG_PREFIXES"))
+    )
+    app_config: dict[str, str] = field(default_factory=dict)
+    instance_path: str | None = field(default_factory=_instance_path_env)
 
     @classmethod
     def from_env(cls) -> PlatformConfig:
-        return cls()
+        app_config_prefixes = _normalize_prefixes(_csv_env("PLATFORM_APP_CONFIG_PREFIXES"))
+        return cls(
+            app_config_prefixes=app_config_prefixes,
+            app_config=_env_app_config(app_config_prefixes),
+            instance_path=_instance_path_env(),
+        )
 
     def is_enabled(self, plugin_id: str) -> bool:
         if self.enabled_apps and plugin_id not in self.enabled_apps:
