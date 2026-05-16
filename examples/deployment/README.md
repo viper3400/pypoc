@@ -39,7 +39,24 @@ PYDO_TODO_FILE=/var/lib/example-product/data/todos.json
 PYTODO_PASSWORD_HASH=scrypt$...
 ```
 
+Default mode serves the product at `/`. To mount it under a subpath, set:
+
+```bash
+PLATFORM_URL_PREFIX=/pypoc
+```
+
 ```bash
 uv sync
 uv run gunicorn "wsgi:app" --bind 0.0.0.0:8000 --workers 2
 ```
+
+The same product config also works with Waitress:
+
+```bash
+uv sync
+uv run platform-server --host 0.0.0.0 --port 8000
+```
+
+Behind nginx or another reverse proxy, forward `/pypoc/...` to the app and keep
+`PLATFORM_URL_PREFIX=/pypoc` in the runtime environment when the deployment is
+served from that subpath.

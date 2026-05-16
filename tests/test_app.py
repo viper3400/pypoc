@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 from pathlib import Path
 
+import pytest
 from flask import Blueprint
 
 from flask_plugin_platform.app import create_app
@@ -39,6 +40,8 @@ def test_index_renders_enabled_local_plugins(monkeypatch) -> None:
 
     assert response.status_code == 200
     assert b"Local Sample" in response.data
+    assert b'href="/static/platform.css"' in response.data
+    assert b'href="/local-sample/"' in response.data
 
 
 def test_plugin_route_is_available(monkeypatch) -> None:
@@ -147,3 +150,71 @@ def test_explicit_platform_config_app_config_is_applied() -> None:
 
     assert app.config["PYDO_DATA_DIR"] == "/srv/pydo"
     assert app.config["PYTODO_PASSWORD_HASH"] == "hash"
+
+
+def test_platform_url_prefix_prefixes_generated_links(monkeypatch) -> None:
+    monkeypatch.syspath_prepend("tests/fixtures")
+    app = create_app(
+        PlatformConfig(
+            entry_point_group="tests.none",
+            local_plugin_package="local_plugins",
+            enabled_apps={"local-sample"},
+            disabled_apps=set(),
+            url_prefix="/pypoc",
+        )
+    )
+
+    response = app.test_client().get("/")
+
+    assert response.status_code == 200
+    assert b'href="/pypoc/static/platform.css"' in response.data
+    assert b'href="/pypoc/local-sample/"' in response.data
+
+
+@pytest.mark.parametrize(
+    ("request_path", "expected_status", "expected_body"),
+    [
+        ("/pypoc/", 200, b"Installed Apps"),
+        ("/pypoc/local-sample/", 200, b"local sample"),
+        ("/", 200, b"Installed Apps"),
+    ],
+)
+def test_platform_url_prefix_accepts_prefixed_and_upstream_paths(
+    monkeypatch,
+    request_path: str,
+    expected_status: int,
+    expected_body: bytes,
+) -> None:
+    monkeypatch.syspath_prepend("tests/fixtures")
+    app = create_app(
+        PlatformConfig(
+            entry_point_group="tests.none",
+            local_plugin_package="local_plugins",
+            enabled_apps={"local-sample"},
+            disabled_apps=set(),
+            url_prefix="/pypoc",
+        )
+    )
+
+    response = app.test_client().get(request_path)
+
+    assert response.status_code == expected_status
+    assert expected_body in response.data
+
+
+@pytest.mark.parametrize(
+    ("raw_prefix", "expected_prefix"),
+    [
+        (None, None),
+        ("", None),
+        ("/pypoc/", "/pypoc"),
+        ("/", "/"),
+    ],
+)
+def test_platform_config_normalizes_url_prefix(raw_prefix: str | None, expected_prefix: str | None) -> None:
+    assert PlatformConfig(url_prefix=raw_prefix).url_prefix == expected_prefix
+
+
+def test_platform_config_rejects_invalid_url_prefix() -> None:
+    with pytest.raises(ValueError, match="PLATFORM_URL_PREFIX"):
+        PlatformConfig(url_prefix="pypoc")

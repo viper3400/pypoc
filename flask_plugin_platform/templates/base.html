@@ -11,7 +11,7 @@
       <a class="brand" href="{{ url_for('index') }}">Platform</a>
       <nav aria-label="Application navigation">
         {% for item in platform_menu %}
-          <a href="{{ item.path }}" class="nav-link" data-icon="{{ item.icon }}">{{ item.label }}</a>
+          <a href="{{ platform_path(item.path) }}" class="nav-link" data-icon="{{ item.icon }}">{{ item.label }}</a>
         {% endfor %}
       </nav>
     </header>
