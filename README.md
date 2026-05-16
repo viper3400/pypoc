@@ -227,6 +227,12 @@ Run with Gunicorn:
 uv run gunicorn "wsgi:app" --bind 0.0.0.0:8000 --workers 2
 ```
 
+Run with Waitress:
+
+```bash
+uv run platform-server --host 0.0.0.0 --port 8000
+```
+
 The example in `examples/deployment/` shows this minimal product-repo shape.
 
 ## Runtime Configuration From Environment
@@ -281,17 +287,48 @@ from flask_plugin_platform import create_app
 app = create_app()
 ```
 
+Default deployments are served at `/`. If a product must be mounted under a
+subpath such as `/pypoc`, set:
+
+```bash
+PLATFORM_URL_PREFIX=/pypoc
+```
+
+When `PLATFORM_URL_PREFIX` is set, the platform prepends that prefix to
+platform-generated URLs and menu links while keeping plugin route definitions
+unchanged. The same setting works for both Gunicorn and Waitress.
+
 Example runtime environment:
 
 ```bash
 SECRET_KEY=change-me
 PLATFORM_APP_CONFIG_PREFIXES=PYDO,PYTODO
 PLATFORM_INSTANCE_PATH=/var/lib/example-product
+PLATFORM_URL_PREFIX=/pypoc
 PYDO_DATA_DIR=/var/lib/example-product/data
 PYDO_TODO_FILE=/var/lib/example-product/data/todos.json
 PYTODO_PASSWORD_HASH=scrypt$...
 gunicorn "wsgi:app" --bind 0.0.0.0:8000 --workers 2
 ```
+
+Equivalent Waitress run:
+
+```bash
+SECRET_KEY=change-me \
+PLATFORM_APP_CONFIG_PREFIXES=PYDO,PYTODO \
+PLATFORM_INSTANCE_PATH=/var/lib/example-product \
+PLATFORM_URL_PREFIX=/pypoc \
+PYDO_DATA_DIR=/var/lib/example-product/data \
+PYDO_TODO_FILE=/var/lib/example-product/data/todos.json \
+PYTODO_PASSWORD_HASH=scrypt$... \
+uv run platform-server --host 0.0.0.0 --port 8000
+```
+
+For reverse proxies that expose the app under a subpath, keep the upstream app
+serving internal routes from `/` and forward the external prefix at the proxy
+layer. For example, an nginx deployment can forward `/pypoc/...` to the app
+while `PLATFORM_URL_PREFIX=/pypoc` keeps generated links and static assets on
+that external path.
 
 For a public GitHub release, the platform dependency can be pinned directly to
 the wheel asset:

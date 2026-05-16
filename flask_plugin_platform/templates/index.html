@@ -16,7 +16,7 @@
         <footer>
           <span>v{{ plugin.version }}</span>
           {% if plugin.menu_entry %}
-            <a href="{{ plugin.menu_entry.path }}">Open</a>
+            <a href="{{ platform_path(plugin.menu_entry.path) }}">Open</a>
           {% endif %}
         </footer>
       </article>

@@ -32,6 +32,20 @@ def _instance_path_env() -> str | None:
     return os.path.abspath(raw)
 
 
+def _normalize_url_prefix(raw: str | None) -> str | None:
+    if raw is None:
+        return None
+
+    prefix = raw.strip()
+    if not prefix:
+        return None
+    if not prefix.startswith("/"):
+        raise ValueError("PLATFORM_URL_PREFIX must start with '/'")
+    if prefix != "/" and prefix.endswith("/"):
+        prefix = prefix.rstrip("/")
+    return prefix
+
+
 @dataclass(frozen=True)
 class PlatformConfig:
     """Runtime configuration for plugin discovery and registration."""
@@ -53,6 +67,12 @@ class PlatformConfig:
     )
     app_config: dict[str, str] = field(default_factory=dict)
     instance_path: str | None = field(default_factory=_instance_path_env)
+    url_prefix: str | None = field(
+        default_factory=lambda: _normalize_url_prefix(os.getenv("PLATFORM_URL_PREFIX"))
+    )
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "url_prefix", _normalize_url_prefix(self.url_prefix))
 
     @classmethod
     def from_env(cls) -> PlatformConfig:
@@ -61,6 +81,7 @@ class PlatformConfig:
             app_config_prefixes=app_config_prefixes,
             app_config=_env_app_config(app_config_prefixes),
             instance_path=_instance_path_env(),
+            url_prefix=_normalize_url_prefix(os.getenv("PLATFORM_URL_PREFIX")),
         )
 
     def is_enabled(self, plugin_id: str) -> bool:
