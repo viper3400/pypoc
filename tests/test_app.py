@@ -42,6 +42,7 @@ def test_index_renders_enabled_local_plugins(monkeypatch) -> None:
     assert b"Local Sample" in response.data
     assert b'href="/static/platform.css"' in response.data
     assert b'href="/local-sample/"' in response.data
+    assert b'href="/about"' in response.data
 
 
 def test_plugin_route_is_available(monkeypatch) -> None:
@@ -218,3 +219,52 @@ def test_platform_config_normalizes_url_prefix(raw_prefix: str | None, expected_
 def test_platform_config_rejects_invalid_url_prefix() -> None:
     with pytest.raises(ValueError, match="PLATFORM_URL_PREFIX"):
         PlatformConfig(url_prefix="pypoc")
+
+
+def test_about_page_renders_version_information(monkeypatch) -> None:
+    monkeypatch.syspath_prepend("tests/fixtures")
+    monkeypatch.setenv("PLATFORM_DEPLOYMENT_NAME", "pypoc-deploy")
+    monkeypatch.setenv("PLATFORM_DEPLOYMENT_VERSION", "0.2.3")
+    monkeypatch.setenv("PLATFORM_BUILD_SHA", "abcdef1234567890")
+
+    app = create_app(
+        PlatformConfig(
+            entry_point_group="tests.none",
+            local_plugin_package="local_plugins",
+            enabled_apps={"local-sample"},
+            disabled_apps=set(),
+        )
+    )
+
+    response = app.test_client().get("/about")
+
+    assert response.status_code == 200
+    assert b"About This Deployment" in response.data
+    assert b"pypoc-deploy" in response.data
+    assert b"v0.2.3" in response.data
+    assert b"abcdef123456" in response.data
+    assert b"Local Sample" in response.data
+
+
+def test_about_page_handles_missing_deployment_metadata(monkeypatch) -> None:
+    monkeypatch.syspath_prepend("tests/fixtures")
+    monkeypatch.delenv("PLATFORM_DEPLOYMENT_NAME", raising=False)
+    monkeypatch.delenv("PLATFORM_DEPLOYMENT_VERSION", raising=False)
+    monkeypatch.delenv("PLATFORM_BUILD_SHA", raising=False)
+
+    app = create_app(
+        PlatformConfig(
+            entry_point_group="tests.none",
+            local_plugin_package="local_plugins",
+            enabled_apps={"local-sample"},
+            disabled_apps=set(),
+        )
+    )
+
+    response = app.test_client().get("/about")
+
+    assert response.status_code == 200
+    assert b"Local host app" in response.data
+    assert b"Version not provided by host deployment" in response.data
+    assert b"local-dev" not in response.data
+    assert b"unknown" not in response.data

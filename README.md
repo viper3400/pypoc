@@ -403,6 +403,24 @@ docker run --rm -p 8000:8000 \
   ghcr.io/<OWNER>/<REPO>:0.1.0
 ```
 
+## Versioning
+
+Source of truth:
+- bump `project.version` in [pyproject.toml](/Users/Jan/Documents/Development/pypoc/pyproject.toml:1)
+
+Release tag format:
+- create a matching Git tag `vX.Y.Z`
+- the release workflow rejects tags that do not match `project.version`
+
+When to bump:
+- bump this repo when platform package behavior or plugin contract behavior changes
+- `PATCH` for fixes, `MINOR` for backward-compatible platform capabilities, `MAJOR` for breaking platform or plugin-contract changes
+
+Relationship to other repos:
+- plugin packages version themselves independently
+- deployment repositories version the shipped bundle independently
+- the platform version should not be treated as the deployment version or a plugin version
+
 ## Release Process
 
 `pyproject.toml` is the single source of truth for package metadata and version.
