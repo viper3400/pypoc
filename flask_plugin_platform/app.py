@@ -5,6 +5,7 @@ from flask import Flask, render_template, request
 from flask_plugin_platform.config import PlatformConfig
 from flask_plugin_platform.middleware import PrefixMiddleware
 from flask_plugin_platform.registry import PluginRegistry
+from flask_plugin_platform.versioning import build_version_info
 
 
 def _prefix_menu_path(path: str) -> str:
@@ -31,6 +32,7 @@ def create_app(config: PlatformConfig | None = None) -> Flask:
 
     registry = PluginRegistry(platform_config)
     plugins = registry.discover()
+    version_info = build_version_info(plugins)
 
     for plugin in plugins:
         app.register_blueprint(plugin.blueprint)
@@ -42,11 +44,16 @@ def create_app(config: PlatformConfig | None = None) -> Flask:
         return {
             "platform_menu": registry.menu_entries,
             "platform_path": _prefix_menu_path,
+            "platform_version_info": version_info,
         }
 
     @app.get("/")
     def index() -> str:
         return render_template("index.html", plugins=plugins)
+
+    @app.get("/about")
+    def about() -> str:
+        return render_template("about.html", version_info=version_info)
 
     return app
 

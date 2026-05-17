@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}About{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <h1>About This Deployment</h1>
+    <p>Installed versions for the deployment bundle, platform, and discovered apps.</p>
+  </section>
+
+  <section class="app-grid" aria-label="Version information">
+    <article class="app-card">
+      <h2>{{ version_info.deployment.name }}</h2>
+      <p>Deployment bundle</p>
+      <footer>
+        {% if version_info.deployment.version %}
+          <span>v{{ version_info.deployment.version }}</span>
+        {% else %}
+          <span>Version not provided by host deployment</span>
+        {% endif %}
+        {% if version_info.deployment.build_sha %}
+          <span>{{ version_info.deployment.build_sha }}</span>
+        {% endif %}
+      </footer>
+    </article>
+
+    <article class="app-card">
+      <h2>flask-plugin-platform</h2>
+      <p>Reusable platform package</p>
+      <footer>
+        <span>v{{ version_info.platform_version }}</span>
+      </footer>
+    </article>
+
+    {% for plugin in version_info.plugins %}
+      <article class="app-card">
+        <h2>{{ plugin.name }}</h2>
+        <p>{{ plugin.description }}</p>
+        <footer>
+          <span>v{{ plugin.version }}</span>
+          {% if plugin.menu_entry %}
+            <a href="{{ platform_path(plugin.menu_entry.path) }}">Open</a>
+          {% endif %}
+        </footer>
+      </article>
+    {% else %}
+      <p>No apps are enabled.</p>
+    {% endfor %}
+  </section>
+{% endblock %}

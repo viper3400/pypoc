@@ -1,9 +1,12 @@
-name: Publish Container Image
+name: Publish Container Image (Disabled)
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
+
+# Disabled on purpose:
+# - keep this workflow file as reference/history
+# - avoid automatic container publishing from this repository
+# Re-enable by restoring the tag-based `push` trigger above.
 
 permissions:
   contents: read

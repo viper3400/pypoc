@@ -10,6 +10,7 @@
     <header class="shell-header">
       <a class="brand" href="{{ url_for('index') }}">Platform</a>
       <nav aria-label="Application navigation">
+        <a href="{{ url_for('about') }}" class="nav-link">About</a>
         {% for item in platform_menu %}
           <a href="{{ platform_path(item.path) }}" class="nav-link" data-icon="{{ item.icon }}">{{ item.label }}</a>
         {% endfor %}
