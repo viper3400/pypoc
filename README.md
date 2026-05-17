@@ -375,8 +375,10 @@ The same downloaded wheel can be installed with `pip install ./flask_plugin_plat
 
 ## GHCR Container Image
 
-Tagged pushes also publish the production image from [Dockerfile](/Users/Jan/Documents/Development/pypoc/Dockerfile:1)
-to GitHub Container Registry via [.github/workflows/container.yml](/Users/Jan/Documents/Development/pypoc/.github/workflows/container.yml:1).
+The production image definition remains in [Dockerfile](/Users/Jan/Documents/Development/pypoc/Dockerfile:1).
+The GitHub Actions workflow file
+[.github/workflows/container.yml](/Users/Jan/Documents/Development/pypoc/.github/workflows/container.yml:1)
+is currently kept as disabled reference/history and does not publish images automatically.
 
 Image name:
 
@@ -384,7 +386,8 @@ Image name:
 ghcr.io/<OWNER>/<REPO>
 ```
 
-For a tag like `v0.1.0`, the workflow publishes these tags:
+If image publishing is re-enabled in the future, a tag like `v0.1.0` would typically
+produce tags such as:
 
 - `ghcr.io/<OWNER>/<REPO>:v0.1.0`
 - `ghcr.io/<OWNER>/<REPO>:0.1.0`
@@ -439,8 +442,9 @@ The `Release Python Package` workflow runs only on version tags. It verifies
 that the tag matches `pyproject.toml`, builds the wheel and sdist, validates the
 artifacts with `twine check`, and uploads them to a GitHub Release.
 
-The `Publish Container Image` workflow runs on the same tags and pushes the
-container image to `ghcr.io` using the repository `GITHUB_TOKEN`.
+The disabled `Publish Container Image` workflow is retained in the repository as
+reference for a future GHCR publishing path, but it is not part of the active
+release flow today.
 
 ## Enable Or Disable Apps
 
